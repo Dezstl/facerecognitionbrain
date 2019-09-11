@@ -35,7 +35,14 @@ class App extends Component {
       imgUrl: '',
       box: {},
       route: 'signin',
-      isSignedIn: false
+      isSignedIn: false,
+      user: {
+        id: 0,
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      }
     }
   }
 
@@ -68,8 +75,24 @@ class App extends Component {
   onSubmit = () => {
     this.setState({imgUrl: this.state.input})
 
-    app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-    .then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
+    app.models
+    .predict(
+      Clarifai.FACE_DETECT_MODEL, this.state.input
+      )
+    .then(response => {
+      fetch('http://localhost:3030/image', {
+        method: 'put',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: this.state.user.id
+        })
+      })
+      .then(response => response.json())
+      .then(count => {
+        this.setState(Object.assign(this.state.user, { entries: count} ));
+      })
+      this.displayFaceBox(this.calculateFaceLocation(response))
+    })
     .catch(error => console.log(error));
   }
   
@@ -82,6 +105,16 @@ class App extends Component {
     this.setState({route: route});
   }
 
+  loadUser = (data) => {
+    this.setState({user: {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined
+    }})
+  }
+
   render() {
     return (
       <div className="App">
@@ -91,12 +124,12 @@ class App extends Component {
         { this.state.route === 'home' ? 
           <div>
             <Logo />
-            <Rank />
+            <Rank name={this.state.user.name} entries={this.state.user.entries}/>
             <ImageLinkForm onInputChange={this.onInputChange} onSubmit={this.onSubmit} />
             <FaceRegonition imgUrl={this.state.imgUrl} box={this.state.box} />
           </div> 
-          : (this.state.route === 'signin' ? <SignIn onRouteChange={this.onRouteChange} /> : 
-              <Register onRouteChange={this.onRouteChange} />
+          : (this.state.route === 'signin' ? <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} /> : 
+              <Register onRouteChange={this.onRouteChange} loadUser={this.loadUser} />
             ) }
       </div>
     );
