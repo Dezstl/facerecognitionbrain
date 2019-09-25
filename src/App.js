@@ -8,11 +8,8 @@ import FaceRegonition from './components/FaceRecognition/FaceRecognition';
 import SignIn from './components/SignIn/SignIn';
 import Register from './components/Register/Register';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai';
 
-const app = new Clarifai.App({
-  apiKey: 'b28e9e306cf345828fd230b1b79ef8e6'
-});
+
 
 const particalConst = {
   particles: {
@@ -61,9 +58,7 @@ class App extends Component {
     }
   }
 
-  calculateFaceLocation = (data) => {
-    console.log(data);
-    
+  calculateFaceLocation = (data) => {    
     const face = data.outputs[0].data.regions[0].region_info.bounding_box;
 
     const image = document.getElementById('inputImage');
@@ -79,7 +74,6 @@ class App extends Component {
   }
 
   displayFaceBox = (box) => {
-    console.log(box);
     this.setState({box: box});
   }
 
@@ -90,23 +84,30 @@ class App extends Component {
   onSubmit = () => {
     this.setState({imgUrl: this.state.input})
 
-    app.models
-    .predict(
-      Clarifai.FACE_DETECT_MODEL, this.state.input
-      )
+    fetch('http://localhost:3030/image', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input: this.state.input
+      })
+    })
+    .then(response => response.json())
     .then(response => {
-      fetch('http://localhost:3030/image', {
-        method: 'put',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: this.state.user.id
+      if (response) {
+        fetch('http://localhost:3030/image', {
+          method: 'put',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: this.state.user.id
+          })
         })
-      })
-      .then(response => response.json())
-      .then(count => {
-        this.setState(Object.assign(this.state.user, { entries: count} ));
-      })
-      .catch(console.log);
+          .then(response => response.json())
+          .then(count => {
+            this.setState(Object.assign(this.state.user, { entries: count }));
+          })
+          .catch(console.log);
+      }
+      
       this.displayFaceBox(this.calculateFaceLocation(response))
     })
     .catch(error => console.log(error));
