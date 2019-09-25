@@ -26,6 +26,21 @@ const particalConst = {
   }
 }
 
+const intitialState = {
+  input: '',
+  imgUrl: '',
+  box: { },
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: 0,
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 class App extends Component {
 
   constructor(){
@@ -91,6 +106,7 @@ class App extends Component {
       .then(count => {
         this.setState(Object.assign(this.state.user, { entries: count} ));
       })
+      .catch(console.log);
       this.displayFaceBox(this.calculateFaceLocation(response))
     })
     .catch(error => console.log(error));
@@ -98,7 +114,7 @@ class App extends Component {
   
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({isSignedIn: false});
+      this.setState(intitialState);
     } else if (route === 'home') {
       this.setState({isSignedIn: true});
     }
